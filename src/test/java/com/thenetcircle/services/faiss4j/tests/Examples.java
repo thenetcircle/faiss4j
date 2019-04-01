@@ -1,9 +1,7 @@
 package com.thenetcircle.services.faiss4j.tests;
 
-import com.thenetcircle.services.faiss.IndexFlatL2;
-import com.thenetcircle.services.faiss.RangeSearchResult;
-import com.thenetcircle.services.faiss.floatArray;
-import com.thenetcircle.services.faiss.longArray;
+import com.thenetcircle.services.faiss.*;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -11,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.util.Random;
+
+import static com.thenetcircle.services.faiss4j.IndexHelper.*;
 
 public class Examples {
     private static final Logger log = LoggerFactory.getLogger(Examples.class);
@@ -26,50 +26,6 @@ public class Examples {
         System.loadLibrary("faiss");
     }
 
-    public static String toString(longArray a, int rows, int cols) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < rows; i++) {
-            sb.append(i).append('\t').append('|');
-            for (int j = 0; j < cols; j++) {
-                sb.append(String.format("%5d ", a.getitem(i * cols + j)));
-            }
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
-    public static String toString(floatArray a, int rows, int cols) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < rows; i++) {
-            sb.append(i).append('\t').append('|');
-            for (int j = 0; j < cols; j++) {
-                sb.append(String.format("%7g ", a.getitem(i * cols + j)));
-            }
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
-    public static floatArray makeFloatArray(float[][] vectors) {
-        int d = vectors[0].length;
-        int nb = vectors.length;
-        floatArray fa = new floatArray(d * nb);
-        for (int i = 0; i < nb; i++) {
-            for (int j = 0; j < d; j++) {
-                fa.setitem(d * i + j, vectors[i][j]);
-            }
-        }
-        return fa;
-    }
-
-    public static longArray makeLongArray(int[] ints) {
-        int len = ints.length;
-        longArray la = new longArray(len);
-        for (int i = 0; i < len; i++) {
-            la.setitem(i, ints[i]);
-        }
-        return la;
-    }
 
     @Test
     public void testFlat() {
@@ -108,9 +64,9 @@ public class Examples {
 
                 log.info("search 5 first vector of xb");
                 index.search(5, xb.cast(), 4, D.cast(), I.cast());
-                log.info("Vectors:\n{}", toString(xb, nb, d));
-                log.info("Distances:\n{}", toString(D, 5, 4));
-                log.info("I:\n{}", toString(I, 5, 4));
+                log.info("Vectors:\n{}", show(xb, nb, d));
+                log.info("Distances:\n{}", show(D, 5, 4));
+                log.info("I:\n{}", show(I, 5, 4));
             }
         } catch (Exception e) {
             log.error("failed", e);
@@ -120,7 +76,7 @@ public class Examples {
     @Test
     public void simpleTest() {
         try {
-            float[][] data = dummyData();
+            float[][] data = dummyData3d(10);
             int d = data[0].length;
             int numberOfVector = data.length;
             floatArray xb = makeFloatArray(data);
@@ -142,10 +98,10 @@ public class Examples {
                 floatArray distances = new floatArray(resultSize);
                 index.search(1, query.cast(), resultSize, distances.cast(), labels.cast());
 
-                log.info("Vectors:\n{}", toString(xb, numberOfVector, d));
-                log.info("Query:\n{}", toString(query, queryConds.length, queryConds[0].length));
-                log.info("Distances:\n{}", toString(distances, 1, resultSize));
-                log.info("Labels:\n{}", toString(labels, 1, resultSize));
+                log.info("Vectors:\n{}", show(xb, numberOfVector, d));
+                log.info("Query:\n{}", show(query, queryConds.length, queryConds[0].length));
+                log.info("Distances:\n{}", show(distances, 1, resultSize));
+                log.info("Labels:\n{}", show(labels, 1, resultSize));
             }
         } catch (Exception e) {
             log.error("failed", e);
@@ -154,7 +110,7 @@ public class Examples {
 
     @Test
     public void testSearchRange() {
-        float[][] data = dummyData();
+        float[][] data = dummyData3d(20);
         int d = data[0].length;
         int numberOfVector = data.length;
 
@@ -175,10 +131,10 @@ public class Examples {
                 longArray labels = longArray.frompointer(re.getLabels());
                 floatArray distances = floatArray.frompointer(re.getDistances());
 
-                log.info("Vectors:\n{}", toString(xb, numberOfVector, d));
-                log.info("Query:\n{}", toString(query, querySize, queryConds[0].length));
-                log.info("Distances:\n{}", toString(distances, querySize, resultSize));
-                log.info("Labels:\n{}", toString(labels, querySize, resultSize));
+                log.info("Vectors:\n{}", show(xb, numberOfVector, d));
+                log.info("Query:\n{}", show(query, querySize, queryConds[0].length));
+                log.info("Distances:\n{}", show(distances, querySize, resultSize));
+                log.info("Labels:\n{}", show(labels, querySize, resultSize));
             }
 
         } catch (Exception e) {
@@ -186,26 +142,70 @@ public class Examples {
         }
     }
 
+    @Test
+    public void egIndexIVFFlat() {
+        try {
+            float[][] data = randomData3d(200);
+            int dimension = data[0].length;
+            int numberOfVector = data.length;
+            int nlist = 6;
+            int nprobe = 2;
 
-    private static float[][] dummyData() {
-        return new float[][]{
-            new float[]{10, 0, 0},
-            new float[]{9, 0, 0},
-            new float[]{8, 0, 0},
-            new float[]{7, 0, 0},
-            new float[]{6, 0, 0},
+            IndexFlatL2 quantizer = new IndexFlatL2(dimension);
+            IndexIVFFlat index = new IndexIVFFlat(quantizer, dimension, nlist, MetricType.METRIC_L2);
 
-            new float[]{0, 10, 0},
-            new float[]{0, 9, 0},
-            new float[]{0, 8, 0},
-            new float[]{0, 7, 0},
-            new float[]{0, 6, 0},
+            Assert.assertTrue(!index.getIs_trained());
+            float[][] trainData = dummyData3d(5);
+            floatArray tb = makeFloatArray(trainData);
+            log.info("Vectors:\n{}", show(tb, trainData.length, dimension));
+            index.train(trainData.length, tb.cast());
+            Assert.assertTrue(index.getIs_trained());
 
-            new float[]{0, 0, 10},
-            new float[]{0, 0, 9},
-            new float[]{0, 0, 8},
-            new float[]{0, 0, 7},
-            new float[]{0, 0, 6},
-        };
+            floatArray xb = makeFloatArray(data);
+            index.add(numberOfVector, xb.cast());
+
+            int resultSize = 10;
+            float[][] queryConds = {new float[]{0, 0, 8}};
+
+            floatArray query = makeFloatArray(queryConds);
+            longArray labels = new longArray(resultSize);
+            floatArray distances = new floatArray(resultSize);
+
+            int numberOfQuery = queryConds.length;
+            index.setNprobe(nprobe);
+            index.search(numberOfQuery, query.cast(), resultSize, distances.cast(), labels.cast());
+
+            log.info("Vectors:\n{}", show(xb, numberOfVector, dimension));
+            log.info("Query:\n{}", show(query, queryConds.length, queryConds[0].length));
+            log.info("Distances:\n{}", show(distances, 1, resultSize));
+            log.info("Labels:\n{}", show(labels, 1, resultSize));
+        } catch (Exception e) {
+            log.error("failed", e);
+        }
     }
+
+    private static float[][] dummyData3d(int size) {
+        float[][] data = new float[size * 3][3];
+        float half = size / 2.0f;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < size; j++) {
+                float[] row = new float[]{0, 0, 0};
+                row[i] = j - half;
+                data[i * size + j] = row;
+            }
+        }
+        return data;
+    }
+
+    private static float[][] randomData3d(int size) {
+        float[][] data = new float[size * 3][3];
+        float half = size / 2.0f;
+        Random rand = new Random();
+        for (int i = 0, j = data.length; i < j; i++) {
+            float[] row = new float[]{rand.nextFloat() * size, rand.nextFloat() * size, rand.nextFloat() * size};
+            data[i] = row;
+        }
+        return data;
+    }
+
 }
