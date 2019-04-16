@@ -15,6 +15,7 @@ yum install -y git
 yum install -y devtoolset-8.x86_64
 yum install -y gcc.x86_64 gcc-c++.x86_64 libgcc.x86_64
 yum install -y cmake3.x86_64 make
+yum groupinstall "Development Tools"  --skip-broken
 yum install -y swig3.x86_64
 yum install -y java-1.8.0-openjdk-devel.x86_64
 yum install -y maven.noarch
@@ -77,6 +78,10 @@ g++ -std=c++11 \
 
 at last, libfaiss.so should be in current path
 -rwxr-xr-x 1 root root 3594624 Apr 16 09:20 swigfaiss4j.so
+
+somehow, the java stub class has an error at
+com/thenetcircle/services/faiss/RangeSearchPartialResult.java:[64,14] error: method finalize() is already defined in class RangeSearchPartialResult
+  
   
 then let us run some test
 ```bash
