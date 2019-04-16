@@ -1,11 +1,11 @@
 # faiss4j
-java wrapper for "facebook faiss":https://github.com/facebookresearch/faiss
+java wrapper for [facebook faiss](https://github.com/facebookresearch/faiss)
 
 how to build this
 
 #build faiss first
 
-Firstly we need to compile from faiss code, please follow "this doc":https://github.com/facebookresearch/faiss/blob/master/INSTALL.md
+Firstly we need to compile from faiss code, please follow [this doc](https://github.com/facebookresearch/faiss/blob/master/INSTALL.md)
 
 I started the experiment with a clean centos docker image, so I needed to install something beforehand
 
@@ -41,7 +41,7 @@ then faiss is built
 
 #build java wrapper
 in root of faiss4j 
-I chose "faiss tagged 1.5.0":https://github.com/facebookresearch/faiss/archive/v1.5.0.zip
+I chose [faiss tagged 1.5.0](https://github.com/facebookresearch/faiss/archive/v1.5.0.zip)
 *IT MIGHT NOT WORK WITH OTHER VERSIONS*
 ```bash
 swig -c++ -java -package com.thenetcircle.services.faiss -o swigfaiss4j.cpp  -outdir src/main/java/com/thenetcircle/services/faiss/ -Doverride= -I../faiss-1.5.0/ swigfaiss4j.swig
