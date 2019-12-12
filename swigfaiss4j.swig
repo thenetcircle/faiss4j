@@ -32,6 +32,8 @@
 %module swigfaiss;
 #endif
 
+%rename(faiss_RangeSearchPartialResult_finalize) faiss::RangeSearchPartialResult::finalize();
+
 // fbode SWIG fails on warnings, so make them non fatal
 #pragma SWIG nowarn=321
 #pragma SWIG nowarn=403
